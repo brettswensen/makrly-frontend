@@ -1,6 +1,6 @@
 import type { FloorPlan, Point, Wall } from '@/types/floorplan';
 
-const API_BASE_URL = 'https://makrly-floorplan-backend--brettmakrly.replit.app';
+const API_BASE_URL = ''; // Use same-origin Next.js API proxy (/api/*) to avoid browser CORS issues.
 
 interface BackendRoom {
   id?: string;
