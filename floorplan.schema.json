@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://makrly.io/schemas/floorplan.v1.json",
+  "title": "Makrly Canonical Floorplan v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "project",
+    "floors",
+    "entities",
+    "revisions",
+    "validation"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "project": {
+      "type": "object",
+      "required": ["project_id", "units", "capture_source"],
+      "additionalProperties": false,
+      "properties": {
+        "project_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "address_or_site_label": { "type": "string" },
+        "jurisdiction": { "type": "string" },
+        "capture_source": { "const": "polycam" },
+        "units": { "const": "imperial" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "floors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["floor_id", "label", "origin", "extent"],
+        "additionalProperties": false,
+        "properties": {
+          "floor_id": { "type": "string", "pattern": "^flr_[A-Za-z0-9_-]+$" },
+          "label": { "type": "string", "minLength": 1 },
+          "origin": {
+            "type": "object",
+            "required": ["x_in", "y_in"],
+            "properties": {
+              "x_in": { "type": "number" },
+              "y_in": { "type": "number" }
+            },
+            "additionalProperties": false
+          },
+          "extent": {
+            "type": "object",
+            "required": ["width_in", "height_in"],
+            "properties": {
+              "width_in": { "type": "number", "exclusiveMinimum": 0 },
+              "height_in": { "type": "number", "exclusiveMinimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "entities": {
+      "type": "object",
+      "required": ["walls", "openings", "rooms"],
+      "additionalProperties": false,
+      "properties": {
+        "walls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["wall_id", "floor_id", "start", "end", "thickness_in"],
+            "additionalProperties": false,
+            "properties": {
+              "wall_id": { "type": "string", "pattern": "^wal_[A-Za-z0-9_-]+$" },
+              "floor_id": { "type": "string" },
+              "kind": { "type": "string", "enum": ["interior", "exterior", "unknown"] },
+              "start": {
+                "type": "object",
+                "required": ["x_in", "y_in"],
+                "additionalProperties": false,
+                "properties": {
+                  "x_in": { "type": "number" },
+                  "y_in": { "type": "number" }
+                }
+              },
+              "end": {
+                "type": "object",
+                "required": ["x_in", "y_in"],
+                "additionalProperties": false,
+                "properties": {
+                  "x_in": { "type": "number" },
+                  "y_in": { "type": "number" }
+                }
+              },
+              "thickness_in": { "type": "number", "exclusiveMinimum": 0 },
+              "height_in": { "type": "number", "exclusiveMinimum": 0 },
+              "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "openings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "opening_id",
+              "type",
+              "floor_id",
+              "wall_id",
+              "offset_in",
+              "width_in"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "opening_id": { "type": "string", "pattern": "^opn_[A-Za-z0-9_-]+$" },
+              "type": { "type": "string", "enum": ["door", "window"] },
+              "floor_id": { "type": "string" },
+              "wall_id": { "type": "string" },
+              "offset_in": { "type": "number", "minimum": 0 },
+              "width_in": { "type": "number", "exclusiveMinimum": 0 },
+              "sill_in": { "type": "number", "minimum": 0 },
+              "height_in": { "type": "number", "exclusiveMinimum": 0 },
+              "swing": { "type": "string", "enum": ["left", "right", "none"] },
+              "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "rooms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["room_id", "floor_id", "name", "boundary_wall_ids"],
+            "additionalProperties": false,
+            "properties": {
+              "room_id": { "type": "string", "pattern": "^rom_[A-Za-z0-9_-]+$" },
+              "floor_id": { "type": "string" },
+              "name": { "type": "string" },
+              "boundary_wall_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string" }
+              },
+              "area_sqft": { "type": "number", "exclusiveMinimum": 0 },
+              "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "fixtures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["fixture_id", "floor_id", "type", "x_in", "y_in"],
+            "additionalProperties": false,
+            "properties": {
+              "fixture_id": { "type": "string", "pattern": "^fix_[A-Za-z0-9_-]+$" },
+              "floor_id": { "type": "string" },
+              "type": { "type": "string" },
+              "x_in": { "type": "number" },
+              "y_in": { "type": "number" },
+              "meta": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "revisions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "rev_id",
+          "timestamp",
+          "actor",
+          "source",
+          "operations",
+          "model_hash"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "rev_id": { "type": "string", "pattern": "^rev_[A-Za-z0-9_-]+$" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "actor": { "type": "string" },
+          "source": { "type": "string", "enum": ["intake", "ai", "user", "system"] },
+          "message": { "type": "string" },
+          "operations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["op", "target_type", "target_id", "params"],
+              "additionalProperties": false,
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "enum": [
+                    "wall.add",
+                    "wall.move",
+                    "wall.resize",
+                    "wall.delete",
+                    "opening.add",
+                    "opening.move",
+                    "opening.resize",
+                    "opening.delete"
+                  ]
+                },
+                "target_type": { "type": "string", "enum": ["wall", "opening"] },
+                "target_id": { "type": "string" },
+                "params": { "type": "object" }
+              }
+            }
+          },
+          "model_hash": { "type": "string", "minLength": 8 }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "required": ["status", "errors", "warnings"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "type": "string", "enum": ["valid", "invalid"] },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["code", "message", "severity"],
+            "additionalProperties": false,
+            "properties": {
+              "code": { "type": "string", "pattern": "^E-[A-Z]+-[0-9]{3}$" },
+              "message": { "type": "string" },
+              "severity": { "type": "string", "enum": ["blocking"] },
+              "path": { "type": "string" }
+            }
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["code", "message"],
+            "additionalProperties": false,
+            "properties": {
+              "code": { "type": "string", "pattern": "^W-[A-Z]+-[0-9]{3}$" },
+              "message": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          }
+        },
+        "parser_confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

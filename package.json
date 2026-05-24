@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:polycam": "python3 -m pytest -q tests/python/test_polycam_harness.py"
   },
   "dependencies": {
     "next": "16.2.6",

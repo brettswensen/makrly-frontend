@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "project": { "project_id": "proj_sj_004", "capture_source": "polycam", "units": "imperial" },
+  "floors": [{ "floor_id": "flr_main", "label": "main", "origin": {"x_in":0,"y_in":0}, "extent": {"width_in":480,"height_in":360} }],
+  "entities": {
+    "walls": [
+      { "wall_id": "wal_1", "floor_id": "flr_main", "start": {"x_in":0,"y_in":0}, "end": {"x_in":100,"y_in":0}, "thickness_in":4.5 },
+      { "wall_id": "wal_2", "floor_id": "flr_main", "start": {"x_in":350,"y_in":200}, "end": {"x_in":450,"y_in":200}, "thickness_in":4.5 }
+    ],
+    "openings": [],
+    "rooms": []
+  },
+  "revisions": [{ "rev_id": "rev_seed", "timestamp": "2026-05-24T19:11:00Z", "actor": "system", "source": "intake", "operations": [], "model_hash": "seedhash002" }],
+  "validation": {
+    "status": "invalid",
+    "errors": [{ "code": "E-GEO-001", "message": "Disconnected wall graph", "severity": "blocking" }],
+    "warnings": [],
+    "parser_confidence": 0.88
+  }
+}
