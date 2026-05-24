@@ -15,6 +15,33 @@ function centroid(points: Point[]) {
   return { x: sum.x / points.length, y: sum.y / points.length };
 }
 
+function distance(a: Point, b: Point) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function buildRoomLabelPoints(rooms: FloorPlan['rooms']) {
+  const placed: Point[] = [];
+  const labels: Record<string, Point> = {};
+
+  rooms.forEach((room) => {
+    const c = centroid(room.points);
+    let candidate = c;
+    let ring = 0;
+
+    while (placed.some((p) => distance(p, candidate) < 22) && ring < 8) {
+      ring += 1;
+      candidate = { x: c.x + ring * 10, y: c.y + ((ring % 2 === 0 ? -1 : 1) * ring * 6) };
+    }
+
+    placed.push(candidate);
+    labels[room.id] = candidate;
+  });
+
+  return labels;
+}
+
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0));
 }
@@ -102,6 +129,8 @@ export default function FloorPlanViewer({ floorPlan }: FloorPlanViewerProps) {
   const viewBox = `${bounds.minX - VIEWBOX_PADDING} ${bounds.minY - VIEWBOX_PADDING} ${bounds.width + VIEWBOX_PADDING * 2} ${bounds.height + VIEWBOX_PADDING * 2}`;
   const sortedRooms = [...floorPlan.rooms].sort((a, b) => (b.areaSqft ?? 0) - (a.areaSqft ?? 0));
   const totalArea = sortedRooms.reduce((sum, room) => sum + (room.areaSqft ?? 0), 0);
+  const roomNumber = new Map(sortedRooms.map((room, idx) => [room.id, idx + 1]));
+  const roomLabels = buildRoomLabelPoints(sortedRooms);
 
   return (
     <div className="bg-white border rounded-lg p-6 space-y-4">
@@ -120,16 +149,16 @@ export default function FloorPlanViewer({ floorPlan }: FloorPlanViewerProps) {
           <button className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50" onClick={() => setZoom((z) => Math.min(4, z + 0.2))}>
             + Zoom
           </button>
-          <button className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50" onClick={() => setPan((p) => ({ ...p, y: p.y - 20 }))}>
+          <button className="hidden md:inline-flex px-3 py-1.5 rounded border text-sm hover:bg-gray-50" onClick={() => setPan((p) => ({ ...p, y: p.y - 20 }))}>
             ↑
           </button>
-          <button className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50" onClick={() => setPan((p) => ({ ...p, y: p.y + 20 }))}>
+          <button className="hidden md:inline-flex px-3 py-1.5 rounded border text-sm hover:bg-gray-50" onClick={() => setPan((p) => ({ ...p, y: p.y + 20 }))}>
             ↓
           </button>
-          <button className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50" onClick={() => setPan((p) => ({ ...p, x: p.x - 20 }))}>
+          <button className="hidden md:inline-flex px-3 py-1.5 rounded border text-sm hover:bg-gray-50" onClick={() => setPan((p) => ({ ...p, x: p.x - 20 }))}>
             ←
           </button>
-          <button className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50" onClick={() => setPan((p) => ({ ...p, x: p.x + 20 }))}>
+          <button className="hidden md:inline-flex px-3 py-1.5 rounded border text-sm hover:bg-gray-50" onClick={() => setPan((p) => ({ ...p, x: p.x + 20 }))}>
             →
           </button>
           <button
@@ -156,17 +185,26 @@ export default function FloorPlanViewer({ floorPlan }: FloorPlanViewerProps) {
                     stroke="rgba(37, 99, 235, 0.9)"
                     strokeWidth={1.5 / zoom}
                   />
-                  <text
-                    x={centroid(room.points).x}
-                    y={centroid(room.points).y}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize={12 / zoom}
-                    fill="#1f2937"
-                    style={{ fontWeight: 600 }}
-                  >
-                    {room.name}
-                  </text>
+                  {(() => {
+                    const label = roomLabels[room.id] ?? centroid(room.points);
+                    const number = roomNumber.get(room.id) ?? 0;
+                    return (
+                      <g>
+                        <circle cx={label.x} cy={label.y} r={8 / zoom} fill="rgba(17,24,39,0.9)" />
+                        <text
+                          x={label.x}
+                          y={label.y}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fontSize={10 / zoom}
+                          fill="#ffffff"
+                          style={{ fontWeight: 700 }}
+                        >
+                          {number}
+                        </text>
+                      </g>
+                    );
+                  })()}
                 </g>
               ))}
 
@@ -187,28 +225,14 @@ export default function FloorPlanViewer({ floorPlan }: FloorPlanViewerProps) {
                 const wall = wallsById.get(door.wallId);
                 if (!wall) return null;
                 const p = pointAlongWall(wall, door.position);
-                return (
-                  <g key={door.id}>
-                    <circle cx={p.x} cy={p.y} r={3.5 / zoom} fill="#f97316" />
-                    <text x={p.x + 5 / zoom} y={p.y - 5 / zoom} fontSize={9 / zoom} fill="#9a3412">
-                      D {door.width}'
-                    </text>
-                  </g>
-                );
+                return <circle key={door.id} cx={p.x} cy={p.y} r={3.5 / zoom} fill="#f97316" />;
               })}
 
               {floorPlan.windows.map((window) => {
                 const wall = wallsById.get(window.wallId);
                 if (!wall) return null;
                 const p = pointAlongWall(wall, window.position);
-                return (
-                  <g key={window.id}>
-                    <rect x={p.x - 3 / zoom} y={p.y - 3 / zoom} width={6 / zoom} height={6 / zoom} fill="#0ea5e9" />
-                    <text x={p.x + 5 / zoom} y={p.y + 11 / zoom} fontSize={9 / zoom} fill="#075985">
-                      W {window.width}'
-                    </text>
-                  </g>
-                );
+                return <rect key={window.id} x={p.x - 3 / zoom} y={p.y - 3 / zoom} width={6 / zoom} height={6 / zoom} fill="#0ea5e9" />;
               })}
             </g>
           </svg>
@@ -237,7 +261,7 @@ export default function FloorPlanViewer({ floorPlan }: FloorPlanViewerProps) {
         </aside>
       </div>
 
-      <div className="mt-2 text-xs text-gray-500">Legend: <span className="text-blue-700">Rooms</span> • <span className="text-gray-900">Walls</span> • <span className="text-orange-600">Doors</span> • <span className="text-sky-600">Windows</span></div>
+      <div className="mt-2 text-xs text-gray-500">Legend: <span className="text-blue-700">Rooms</span> • <span className="text-gray-900">Walls</span> • <span className="text-orange-600">Doors</span> • <span className="text-sky-600">Windows</span> • Number badges map to the Room Summary list</div>
     </div>
   );
 }
