@@ -31,6 +31,11 @@ function pointToString(p: Point) {
   return `${p.x},${p.y}`;
 }
 
+function formatSqFt(area?: number) {
+  if (typeof area !== 'number' || Number.isNaN(area)) return 'N/A';
+  return `${area.toFixed(1)} sq ft`;
+}
+
 export default function FloorPlanViewer({ floorPlan }: FloorPlanViewerProps) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -95,6 +100,8 @@ export default function FloorPlanViewer({ floorPlan }: FloorPlanViewerProps) {
   }
 
   const viewBox = `${bounds.minX - VIEWBOX_PADDING} ${bounds.minY - VIEWBOX_PADDING} ${bounds.width + VIEWBOX_PADDING * 2} ${bounds.height + VIEWBOX_PADDING * 2}`;
+  const sortedRooms = [...floorPlan.rooms].sort((a, b) => (b.areaSqft ?? 0) - (a.areaSqft ?? 0));
+  const totalArea = sortedRooms.reduce((sum, room) => sum + (room.areaSqft ?? 0), 0);
 
   return (
     <div className="bg-white border rounded-lg p-6 space-y-4">
@@ -208,19 +215,24 @@ export default function FloorPlanViewer({ floorPlan }: FloorPlanViewerProps) {
         </div>
 
         <aside className="bg-gray-50 border rounded-lg p-4 space-y-3">
-          <h4 className="font-semibold">Room Data</h4>
-          {floorPlan.rooms.length === 0 ? (
+          <div className="flex items-center justify-between">
+            <h4 className="font-semibold">Room Summary</h4>
+            <span className="text-xs font-medium text-gray-600">Total: {formatSqFt(totalArea)}</span>
+          </div>
+
+          {sortedRooms.length === 0 ? (
             <p className="text-sm text-gray-500">No rooms detected.</p>
           ) : (
-            <ul className="space-y-2 max-h-[460px] overflow-auto pr-1">
-              {floorPlan.rooms.map((room) => (
-                <li key={room.id} className="bg-white border rounded p-2">
-                  <p className="font-medium text-sm">{room.name}</p>
-                  <p className="text-xs text-gray-600">Area: {room.areaSqft?.toFixed?.(1) ?? room.areaSqft} sqft</p>
-                  <p className="text-xs text-gray-500">Vertices: {room.points.length}</p>
+            <ol className="space-y-2 max-h-[460px] overflow-auto pr-1">
+              {sortedRooms.map((room, index) => (
+                <li key={room.id} className="bg-white border rounded p-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium text-sm">{index + 1}. {room.name}</p>
+                    <p className="text-xs text-gray-700">{formatSqFt(room.areaSqft)}</p>
+                  </div>
                 </li>
               ))}
-            </ul>
+            </ol>
           )}
         </aside>
       </div>
