@@ -129,6 +129,17 @@ export default function Home() {
         {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
       </div>
 
+      {normalizeResult && <section className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+        <h2 className="text-base font-semibold text-blue-900">2-Minute Demo Script</h2>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-blue-900">
+          <li>Click a valid preset (e.g., <span className="font-mono">Raise wall-1 to 108in</span>) and press <span className="font-semibold">Apply Edit Operation</span>.</li>
+          <li>Confirm success message appears and floor plan updates.</li>
+          <li>Click an invalid preset (e.g., <span className="font-mono">Set wall-1 height 0</span>) and press <span className="font-semibold">Apply Edit Operation</span>.</li>
+          <li>Confirm hard-stop rejection appears and rollback is reported.</li>
+          <li>Use <span className="font-semibold">Download Canonical JSON</span> to export test output.</li>
+        </ol>
+      </section>}
+
       {normalizeResult && <div className="mb-6 grid gap-4 md:grid-cols-2">
         <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <h2 className="text-base font-semibold text-gray-900">Permit Readiness Summary</h2>
