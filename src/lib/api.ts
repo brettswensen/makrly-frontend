@@ -172,6 +172,32 @@ export async function normalizePolycamIntake(meta: unknown, plan: unknown): Prom
   return data;
 }
 
+export async function applyPolycamEdit(canonical_floorplan: Record<string, unknown>, operation: Record<string, unknown>): Promise<{
+  status: 'ok' | 'rejected';
+  message: string;
+  canonical_floorplan: Record<string, unknown>;
+  validation: {
+    status: 'valid' | 'invalid';
+    errors: Array<{ code: string; message: string; severity: string; path: string }>;
+    warnings: unknown[];
+    parser_confidence: number;
+  };
+  rollback_applied: boolean;
+}> {
+  const response = await fetch(`${API_BASE_URL}/api/polycam/edit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ canonical_floorplan, operation }),
+  });
+
+  const data = await response.json();
+  if (!response.ok && !data?.canonical_floorplan) {
+    throw new Error(data?.error?.message || 'Failed to apply edit operation');
+  }
+
+  return data;
+}
+
 export async function modifyFloorPlan(
   floorPlan: FloorPlan,
   command: string
