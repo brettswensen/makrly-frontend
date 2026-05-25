@@ -148,6 +148,30 @@ export async function parseFloorPlan(file: File): Promise<{ floorPlan: FloorPlan
   };
 }
 
+export async function normalizePolycamIntake(meta: unknown, plan: unknown): Promise<{
+  status: 'ok' | 'rejected';
+  canonical_floorplan: Record<string, unknown>;
+  validation: {
+    status: 'valid' | 'invalid';
+    errors: Array<{ code: string; message: string; severity: string; path: string }>;
+    warnings: unknown[];
+    parser_confidence: number;
+  };
+}> {
+  const response = await fetch(`${API_BASE_URL}/api/polycam/normalize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ meta, plan }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.error?.message || 'Failed to normalize Polycam intake');
+  }
+
+  return data;
+}
+
 export async function modifyFloorPlan(
   floorPlan: FloorPlan,
   command: string
