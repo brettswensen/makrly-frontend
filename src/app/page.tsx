@@ -106,6 +106,14 @@ export default function Home() {
     { label: "No blocking validation errors", ok: validationErrors.length === 0 },
   ];
 
+  const editPresets = [
+    { label: "Raise wall-1 to 108in (valid)", json: '{"op":"SET_WALL_HEIGHT","wall_id":"wall-1","height_in":108}' },
+    { label: "Move wall-1 +12,+0 (valid)", json: '{"op":"MOVE_WALL","wall_id":"wall-1","dx":12,"dy":0}' },
+    { label: "Add door on wall-1 (valid)", json: '{"op":"ADD_OPENING","wall_id":"wall-1","opening_type":"door","width_in":36,"position_ratio":0.5}' },
+    { label: "Add window missing sill (forces rollback)", json: '{"op":"ADD_OPENING","wall_id":"wall-1","opening_type":"window","width_in":36,"position_ratio":0.5}' },
+    { label: "Set wall-1 height 0 (forces rollback)", json: '{"op":"SET_WALL_HEIGHT","wall_id":"wall-1","height_in":0}' },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50"><main className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-10">
       <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-6">
@@ -136,6 +144,17 @@ export default function Home() {
         <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <h2 className="text-base font-semibold text-gray-900">Edit Engine (Step 3)</h2>
           <p className="mt-1 text-xs text-gray-600">Paste deterministic operation JSON and apply. Invalid edits are hard-stopped and rolled back.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {editPresets.map((preset) => (
+              <button
+                key={preset.label}
+                onClick={() => setOpJson(preset.json)}
+                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
           <textarea value={opJson} onChange={(e)=>setOpJson(e.target.value)} className="mt-3 h-36 w-full rounded-lg border border-gray-300 p-2 font-mono text-xs" />
           <button onClick={handleApplyEdit} className="mt-3 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black">Apply Edit Operation</button>
           <p className="mt-2 text-xs text-gray-500">Examples: MOVE_WALL, SET_WALL_HEIGHT, ADD_OPENING, DELETE_OPENING</p>
