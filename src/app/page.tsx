@@ -2,14 +2,67 @@
 
 import { useState } from "react";
 import FloorPlanViewer from "@/components/FloorPlanViewer";
-import { parseFloorPlan } from "@/lib/api";
+import { normalizePolycamIntake, parseFloorPlan } from "@/lib/api";
 import type { FloorPlan } from "@/types/floorplan";
+
+type ValidationError = {
+  code: string;
+  message: string;
+  severity: string;
+  path: string;
+};
+
+function toCanonicalFromFrontend(floorPlan: FloorPlan) {
+  return {
+    schema_version: "1.0.0",
+    project: {
+      project_id: floorPlan.id,
+      capture_source: "polycam",
+      units: "imperial",
+    },
+    entities: {
+      walls: floorPlan.walls.map((w) => ({
+        wall_id: w.id,
+        floor_id: "F1",
+        start: { x: w.start.x, y: w.start.y },
+        end: { x: w.end.x, y: w.end.y },
+        thickness_in: Math.max(1, w.thickness * 12),
+      })),
+      openings: [
+        ...floorPlan.doors.map((d) => ({
+          opening_id: d.id,
+          type: "door",
+          floor_id: "F1",
+          wall_id: d.wallId,
+          width_in: Math.max(24, d.width * 12),
+          position_ratio: d.position,
+        })),
+        ...floorPlan.windows.map((w) => ({
+          opening_id: w.id,
+          type: "window",
+          floor_id: "F1",
+          wall_id: w.wallId,
+          width_in: Math.max(24, w.width * 12),
+          position_ratio: w.position,
+        })),
+      ],
+      rooms: floorPlan.rooms.map((r) => ({
+        room_id: r.id,
+        floor_id: "F1",
+        name: r.name,
+        polygon: r.points,
+        area_sqft: r.areaSqft,
+      })),
+    },
+  };
+}
 
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [floorPlan, setFloorPlan] = useState<FloorPlan | null>(null);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleParse() {
@@ -21,11 +74,30 @@ export default function Home() {
     setIsLoading(true);
     setError("");
     setMessage("");
+    setValidationErrors([]);
 
     try {
       const result = await parseFloorPlan(selectedFile);
+      const meta = {
+        project_id: result.floorPlan.id,
+        source_filename: selectedFile.name,
+        units: "imperial",
+      };
+      const canonicalCandidate = toCanonicalFromFrontend(result.floorPlan);
+      const normalizeResult = await normalizePolycamIntake(meta, canonicalCandidate);
+
+      if (normalizeResult.status === "rejected" || normalizeResult.validation?.status === "invalid") {
+        const errors = Array.isArray(normalizeResult.validation?.errors)
+          ? (normalizeResult.validation.errors as ValidationError[])
+          : [];
+        setValidationErrors(errors);
+        setError("Parse completed but blocked by permit validation checks. Fix the listed E-* errors.");
+        setFloorPlan(result.floorPlan);
+        return;
+      }
+
       setFloorPlan(result.floorPlan);
-      setMessage(result.message || "Floor plan parsed successfully.");
+      setMessage(`${result.message || "Floor plan parsed successfully."} Normalization + permit validation passed.`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to parse floor plan.";
       setError(errorMessage);
@@ -52,6 +124,7 @@ export default function Home() {
                 const file = e.target.files?.[0] || null;
                 setSelectedFile(file);
                 setError("");
+                setValidationErrors([]);
               }}
               className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-black md:w-auto"
             />
@@ -73,6 +146,20 @@ export default function Home() {
 
           {message && <p className="mt-3 text-sm text-green-700">{message}</p>}
           {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+
+          {validationErrors.length > 0 && (
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3">
+              <p className="text-sm font-semibold text-red-800">Blocking validation errors</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-900">
+                {validationErrors.map((ve, idx) => (
+                  <li key={`${ve.code}-${idx}`}>
+                    <span className="font-mono">{ve.code}</span>: {ve.message}{" "}
+                    <span className="text-red-700">({ve.path})</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <FloorPlanViewer floorPlan={floorPlan} />
