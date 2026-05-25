@@ -93,6 +93,11 @@ Priority order:
 - Openings remain anchored to parent wall
 - Opening width <= wall length - minimum clearances
 - Room areas stay positive where enclosed regions are recomputed
+- Every edited room must retain/receive required dimension annotations
+- Permit profile checks:
+  - all rooms have non-empty labels
+  - all walls include `height_in`
+  - all windows include `sill_in` (doors default `sill_in=0`)
 
 ### Post-apply
 - Schema validation passes

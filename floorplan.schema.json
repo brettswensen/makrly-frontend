@@ -71,7 +71,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["wall_id", "floor_id", "start", "end", "thickness_in"],
+            "required": ["wall_id", "floor_id", "start", "end", "thickness_in", "height_in"],
             "additionalProperties": false,
             "properties": {
               "wall_id": { "type": "string", "pattern": "^wal_[A-Za-z0-9_-]+$" },
@@ -121,11 +121,21 @@
               "wall_id": { "type": "string" },
               "offset_in": { "type": "number", "minimum": 0 },
               "width_in": { "type": "number", "exclusiveMinimum": 0 },
-              "sill_in": { "type": "number", "minimum": 0 },
+              "sill_in": { "type": "number", "minimum": 0, "default": 0 },
               "height_in": { "type": "number", "exclusiveMinimum": 0 },
               "swing": { "type": "string", "enum": ["left", "right", "none"] },
               "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
-            }
+            },
+            "allOf": [
+              {
+                "if": { "properties": { "type": { "const": "window" } }, "required": ["type"] },
+                "then": { "required": ["sill_in"] }
+              },
+              {
+                "if": { "properties": { "type": { "const": "door" } }, "required": ["type"] },
+                "then": { "properties": { "sill_in": { "default": 0 } } }
+              }
+            ]
           }
         },
         "rooms": {
@@ -137,7 +147,7 @@
             "properties": {
               "room_id": { "type": "string", "pattern": "^rom_[A-Za-z0-9_-]+$" },
               "floor_id": { "type": "string" },
-              "name": { "type": "string" },
+              "name": { "type": "string", "minLength": 1 },
               "boundary_wall_ids": {
                 "type": "array",
                 "minItems": 1,

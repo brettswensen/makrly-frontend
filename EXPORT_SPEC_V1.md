@@ -59,8 +59,17 @@ Each exported package includes:
 ### Permit Validation Gate (hard-stop)
 Export is blocked if any:
 - `validation.status != valid`
-- Missing required dimensions for permit profile
+- Any room has missing/blank room label
+- Any wall has missing `height_in` (ceiling/wall height)
+- Any window has missing `sill_in` (doors default to `sill_in=0`)
+- Any edited room is missing required dimension annotations
 - Geometry conflicts unresolved
+
+Permit-ready condition (explicit):
+- all rooms labeled
+- all edited rooms dimensioned
+- all walls have height_in
+- all windows have sill_in
 
 ### Permit JSON Manifest (sidecar)
 ```json
