@@ -1,17 +1,24 @@
-import { test } from "node:test";
 import * as assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { test } from "node:test";
 
 import { applyDeterministicEdit } from "../../src/lib/polycam-edit-engine";
 
 type CanonicalLike = {
   entities: {
     walls: Array<{ height_in?: number }>;
-    openings: Array<{ type?: string; sill_in?: number }>;
+    openings: Array<{ opening_id?: string; type?: string; sill_in?: number }>;
   };
 };
 
 function asCanonical(v: unknown): CanonicalLike {
   return v as CanonicalLike;
+}
+
+function loadFixture(name: string): unknown {
+  const path = resolve(__dirname, "../fixtures/canonical", name);
+  return JSON.parse(readFileSync(path, "utf8")) as unknown;
 }
 
 function baseCanonical() {
@@ -117,4 +124,47 @@ test("rejects delete of missing opening and rolls back", () => {
 
   assert.equal(result.status, "rejected");
   assert.equal(result.rollback_applied, true);
+});
+
+test("messy-but-valid canonical fixture accepts valid edit", () => {
+  const fixture = loadFixture("canonical_messy_but_valid.json");
+  const result = applyDeterministicEdit(fixture, {
+    op: "MOVE_WALL",
+    wall_id: "wall-A",
+    dx: 6,
+    dy: 0,
+  });
+
+  assert.equal(result.status, "ok");
+  assert.equal(result.rollback_applied, false);
+});
+
+test("missing wall geometry fixture rejects wall move with rollback", () => {
+  const fixture = loadFixture("canonical_missing_wall_geometry.json");
+  const result = applyDeterministicEdit(fixture, {
+    op: "MOVE_WALL",
+    wall_id: "wall-bad",
+    dx: 4,
+    dy: 2,
+  });
+
+  assert.equal(result.status, "rejected");
+  assert.equal(result.rollback_applied, true);
+  assert.match(result.message, /Wall geometry is invalid/);
+});
+
+test("existing opening IDs fixture allocates deterministic next opening id", () => {
+  const fixture = loadFixture("canonical_existing_opening_ids.json");
+  const result = applyDeterministicEdit(fixture, {
+    op: "ADD_OPENING",
+    wall_id: "wall-1",
+    opening_type: "door",
+    width_in: 36,
+    position_ratio: 0.5,
+  });
+
+  assert.equal(result.status, "ok");
+  const openings = asCanonical(result.canonical_floorplan).entities.openings;
+  const ids = openings.map((o) => String(o.opening_id || ""));
+  assert.ok(ids.includes("opening-3"));
 });

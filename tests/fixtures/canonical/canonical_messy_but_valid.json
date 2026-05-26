@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0.0",
+  "project": {
+    "project_id": "fixture-messy-valid",
+    "units": "imperial"
+  },
+  "entities": {
+    "walls": [
+      {
+        "wall_id": "wall-A",
+        "floor_id": "F1",
+        "start": { "x": "0", "y": 0 },
+        "end": { "x": "144", "y": "0" },
+        "thickness_in": 6,
+        "height_in": 96
+      }
+    ],
+    "openings": [
+      {
+        "opening_id": "opening-1",
+        "type": "door",
+        "floor_id": "F1",
+        "wall_id": "wall-A",
+        "width_in": 36,
+        "position_ratio": 0.3,
+        "sill_in": 0
+      }
+    ],
+    "rooms": [
+      {
+        "room_id": "room-1",
+        "floor_id": "F1",
+        "name": "Living",
+        "polygon": [
+          { "x": 0, "y": 0 },
+          { "x": 144, "y": 0 },
+          { "x": 144, "y": 120 },
+          { "x": 0, "y": 120 }
+        ],
+        "area_sqft": 120
+      }
+    ]
+  },
+  "validation": {
+    "status": "valid",
+    "errors": [],
+    "warnings": [],
+    "parser_confidence": 0.93
+  }
+}
