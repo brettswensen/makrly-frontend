@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0.0",
+  "project": {
+    "project_id": "fixture-opening-ids",
+    "units": "imperial"
+  },
+  "entities": {
+    "walls": [
+      {
+        "wall_id": "wall-1",
+        "floor_id": "F1",
+        "start": { "x": 0, "y": 0 },
+        "end": { "x": 160, "y": 0 },
+        "thickness_in": 6,
+        "height_in": 96
+      }
+    ],
+    "openings": [
+      {
+        "opening_id": "opening-1",
+        "type": "door",
+        "floor_id": "F1",
+        "wall_id": "wall-1",
+        "width_in": 32,
+        "position_ratio": 0.2,
+        "sill_in": 0
+      },
+      {
+        "opening_id": "opening-2",
+        "type": "window",
+        "floor_id": "F1",
+        "wall_id": "wall-1",
+        "width_in": 48,
+        "position_ratio": 0.7,
+        "sill_in": 36
+      }
+    ],
+    "rooms": [
+      {
+        "room_id": "room-1",
+        "floor_id": "F1",
+        "name": "Hall",
+        "polygon": [
+          { "x": 0, "y": 0 },
+          { "x": 160, "y": 0 },
+          { "x": 160, "y": 100 },
+          { "x": 0, "y": 100 }
+        ],
+        "area_sqft": 111
+      }
+    ]
+  },
+  "validation": {
+    "status": "valid",
+    "errors": [],
+    "warnings": [],
+    "parser_confidence": 0.91
+  }
+}

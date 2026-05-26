@@ -1,0 +1,45 @@
+name: Polycam Harness
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  polycam-harness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test deps
+        run: python -m pip install --upgrade pip pytest
+
+      - name: Run Polycam harness regression
+        run: python -m pytest -q tests/python/test_polycam_harness.py
+
+  frontend-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

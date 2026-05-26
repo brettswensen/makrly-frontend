@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "project": {
+    "project_id": "fixture-missing-geometry",
+    "units": "imperial"
+  },
+  "entities": {
+    "walls": [
+      {
+        "wall_id": "wall-bad",
+        "floor_id": "F1",
+        "start": { "x": "bad", "y": 0 },
+        "end": { "x": 120, "y": 0 },
+        "thickness_in": 6,
+        "height_in": 96
+      }
+    ],
+    "openings": [],
+    "rooms": [
+      {
+        "room_id": "room-1",
+        "floor_id": "F1",
+        "name": "Office",
+        "polygon": [
+          { "x": 0, "y": 0 },
+          { "x": 120, "y": 0 },
+          { "x": 120, "y": 100 },
+          { "x": 0, "y": 100 }
+        ],
+        "area_sqft": 84
+      }
+    ]
+  },
+  "validation": {
+    "status": "valid",
+    "errors": [],
+    "warnings": [],
+    "parser_confidence": 0.9
+  }
+}

@@ -1,85 +1,129 @@
-const API_BASE_URL = 'https://makrly-floorplan-backend--brettmakrly.replit.app';
+import type { FloorPlan, Point, Wall } from '@/types/floorplan';
 
-export interface FloorPlan {
-  id: string;
-  name: string;
-  rooms: Array<{
-    id: string;
-    name: string;
-    points: Array<{ x: number; y: number }>;
-    areaSqft: number;
-  }>;
-  walls: Array<{
-    id: string;
-    start: { x: number; y: number };
-    end: { x: number; y: number };
-    thickness: number;
-  }>;
-  doors: Array<{
-    id: string;
-    wallId: string;
-    position: number;
-    width: number;
-  }>;
-  windows: Array<{
-    id: string;
-    wallId: string;
-    position: number;
-    width: number;
-  }>;
-  scale: number;
+const API_BASE_URL = ''; // Use same-origin Next.js API proxy (/api/*) to avoid browser CORS issues.
+
+interface BackendRoom {
+  id?: string;
+  name?: string;
+  points?: Point[];
+  polygon?: Point[];
+  areaSqft?: number;
+  area_sqft?: number;
 }
 
-export interface ParseResponse {
-  floorPlan: FloorPlan;
-  source_filename: string;
-  message: string;
+interface BackendWall {
+  id?: string;
+  start?: Point;
+  end?: Point;
+  thickness?: number;
 }
 
-// Backend now returns camelCase directly matching frontend types
+interface BackendDoorWindow {
+  id?: string;
+  wallId?: string;
+  wall_id?: string;
+  position?: number | Point;
+  width?: number;
+}
+
 interface BackendFloorPlan {
-  id: string;
-  name: string;
-  rooms: Array<{
-    id: string;
-    name: string;
-    points: Array<{ x: number; y: number }>;
-    areaSqft: number;
-  }>;
-  walls: Array<{
-    id: string;
-    start: { x: number; y: number };
-    end: { x: number; y: number };
-    thickness?: number;
-  }>;
-  doors: Array<{
-    id: string;
-    wallId: string;
-    position: number;
-    width: number;
-  }>;
-  windows: Array<{
-    id: string;
-    wallId: string;
-    position: number;
-    width: number;
-  }>;
-  scale: number;
+  id?: string;
+  name?: string;
+  rooms?: BackendRoom[];
+  walls?: BackendWall[];
+  doors?: BackendDoorWindow[];
+  windows?: BackendDoorWindow[];
+  scale?: number;
+}
+
+function isPoint(p: unknown): p is Point {
+  return !!p && typeof p === 'object' && Number.isFinite((p as Point).x) && Number.isFinite((p as Point).y);
+}
+
+function clamp01(v: number) {
+  return Math.max(0, Math.min(1, v));
+}
+
+function normalizePosition(position: number | Point | undefined, wall: Wall | undefined): number {
+  if (typeof position === 'number' && Number.isFinite(position)) {
+    return clamp01(position);
+  }
+
+  if (!wall || !isPoint(position)) return 0.5;
+
+  const dx = wall.end.x - wall.start.x;
+  const dy = wall.end.y - wall.start.y;
+  const len2 = dx * dx + dy * dy;
+  if (!Number.isFinite(len2) || len2 <= 0) return 0.5;
+
+  const px = position.x - wall.start.x;
+  const py = position.y - wall.start.y;
+  return clamp01((px * dx + py * dy) / len2);
 }
 
 function transformBackendToFrontend(backend: BackendFloorPlan): FloorPlan {
-  // Backend now returns data in frontend format directly
+  const rawWalls = Array.isArray(backend?.walls) ? backend.walls : [];
+  const walls: Wall[] = rawWalls
+    .filter((w) => w && isPoint(w.start) && isPoint(w.end))
+    .map((w, index) => ({
+      id: w.id || `wall-${index + 1}`,
+      start: { x: Number(w.start!.x), y: Number(w.start!.y) },
+      end: { x: Number(w.end!.x), y: Number(w.end!.y) },
+      thickness: Number.isFinite(w.thickness) ? Number(w.thickness) : 0.5,
+    }));
+
+  const wallsById = new Map(walls.map((w) => [w.id, w]));
+
+  const rawRooms = Array.isArray(backend?.rooms) ? backend.rooms : [];
+  const rooms = rawRooms
+    .map((r, index) => {
+      const pts = Array.isArray(r.points) ? r.points : Array.isArray(r.polygon) ? r.polygon : [];
+      const validPoints = pts.filter(isPoint).map((p) => ({ x: Number(p.x), y: Number(p.y) }));
+      return {
+        id: r.id || `room-${index + 1}`,
+        name: r.name || `Room ${index + 1}`,
+        points: validPoints,
+        areaSqft: Number.isFinite(r.areaSqft) ? Number(r.areaSqft) : Number.isFinite(r.area_sqft) ? Number(r.area_sqft) : 0,
+      };
+    })
+    .filter((r) => r.points.length >= 3);
+
+  const rawDoors = Array.isArray(backend?.doors) ? backend.doors : [];
+  const doors = rawDoors
+    .map((d, index) => {
+      const wallId = d.wallId || d.wall_id || '';
+      const wall = wallsById.get(wallId);
+      return {
+        id: d.id || `door-${index + 1}`,
+        wallId,
+        position: normalizePosition(d.position, wall),
+        width: Number.isFinite(d.width) ? Number(d.width) : 3,
+      };
+    })
+    .filter((d) => !!d.wallId);
+
+  const rawWindows = Array.isArray(backend?.windows) ? backend.windows : [];
+  const windows = rawWindows
+    .map((w, index) => {
+      const wallId = w.wallId || w.wall_id || '';
+      const wall = wallsById.get(wallId);
+      return {
+        id: w.id || `window-${index + 1}`,
+        wallId,
+        position: normalizePosition(w.position, wall),
+        width: Number.isFinite(w.width) ? Number(w.width) : 4,
+      };
+    })
+    .filter((w) => !!w.wallId);
+
   return {
-    id: backend.id,
-    name: backend.name,
-    rooms: backend.rooms,
-    walls: backend.walls.map(w => ({
-      ...w,
-      thickness: w.thickness || 0.5,
-    })),
-    doors: backend.doors,
-    windows: backend.windows,
-    scale: backend.scale,
+    id: backend?.id || `fp-${Date.now()}`,
+    name: backend?.name || 'Parsed Floor Plan',
+    rooms,
+    walls,
+    doors,
+    windows,
+    scale: Number.isFinite(backend?.scale) ? Number(backend.scale) : 1,
   };
 }
 
@@ -99,9 +143,59 @@ export async function parseFloorPlan(file: File): Promise<{ floorPlan: FloorPlan
 
   const data = await response.json();
   return {
-    floorPlan: transformBackendToFrontend(data.floorPlan),
-    message: data.message,
+    floorPlan: transformBackendToFrontend(data.floorPlan || {}),
+    message: data.message || 'Floor plan parsed successfully',
   };
+}
+
+export async function normalizePolycamIntake(meta: unknown, plan: unknown): Promise<{
+  status: 'ok' | 'rejected';
+  canonical_floorplan: Record<string, unknown>;
+  validation: {
+    status: 'valid' | 'invalid';
+    errors: Array<{ code: string; message: string; severity: string; path: string }>;
+    warnings: unknown[];
+    parser_confidence: number;
+  };
+}> {
+  const response = await fetch(`${API_BASE_URL}/api/polycam/normalize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ meta, plan }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.error?.message || 'Failed to normalize Polycam intake');
+  }
+
+  return data;
+}
+
+export async function applyPolycamEdit(canonical_floorplan: Record<string, unknown>, operation: Record<string, unknown>): Promise<{
+  status: 'ok' | 'rejected';
+  message: string;
+  canonical_floorplan: Record<string, unknown>;
+  validation: {
+    status: 'valid' | 'invalid';
+    errors: Array<{ code: string; message: string; severity: string; path: string }>;
+    warnings: unknown[];
+    parser_confidence: number;
+  };
+  rollback_applied: boolean;
+}> {
+  const response = await fetch(`${API_BASE_URL}/api/polycam/edit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ canonical_floorplan, operation }),
+  });
+
+  const data = await response.json();
+  if (!response.ok && !data?.canonical_floorplan) {
+    throw new Error(data?.error?.message || 'Failed to apply edit operation');
+  }
+
+  return data;
 }
 
 export async function modifyFloorPlan(

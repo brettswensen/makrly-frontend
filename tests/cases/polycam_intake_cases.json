@@ -1,0 +1,74 @@
+[
+  {
+    "case_id": "META_VALID_BASELINE",
+    "fixture": "tests/fixtures/polycam/polycam_meta_valid.json",
+    "expected": {
+      "status": "valid",
+      "blocking_errors": [],
+      "warnings": []
+    }
+  },
+  {
+    "case_id": "META_MISSING_UNITS",
+    "fixture": "tests/fixtures/polycam/polycam_meta_missing_units.json",
+    "expected": {
+      "status": "invalid",
+      "blocking_errors": ["E-META-001"],
+      "warnings": []
+    }
+  },
+  {
+    "case_id": "META_INVALID_UNITS",
+    "fixture": "tests/fixtures/polycam/polycam_meta_invalid_units.json",
+    "expected": {
+      "status": "invalid",
+      "blocking_errors": ["E-META-002"],
+      "warnings": []
+    }
+  },
+  {
+    "case_id": "PLAN_VALID_BASELINE",
+    "fixture": "tests/fixtures/polycam/polycam_plan_mock_valid.json",
+    "expected": {
+      "status": "valid",
+      "blocking_errors": [],
+      "warnings": []
+    }
+  },
+  {
+    "case_id": "PLAN_DISCONNECTED_WALL",
+    "fixture": "tests/fixtures/polycam/polycam_plan_mock_disconnected_wall.json",
+    "expected": {
+      "status": "invalid",
+      "blocking_errors": ["E-GEO-001"],
+      "warnings": []
+    }
+  },
+  {
+    "case_id": "PLAN_OPENING_UNANCHORED",
+    "fixture": "tests/fixtures/polycam/polycam_plan_mock_opening_unanchored.json",
+    "expected": {
+      "status": "invalid",
+      "blocking_errors": ["E-GEO-004"],
+      "warnings": []
+    }
+  },
+  {
+    "case_id": "PLAN_SELF_INTERSECTION",
+    "fixture": "tests/fixtures/polycam/polycam_plan_mock_self_intersection.json",
+    "expected": {
+      "status": "invalid",
+      "blocking_errors": ["E-GEO-002"],
+      "warnings": []
+    }
+  },
+  {
+    "case_id": "PLAN_LOW_CONFIDENCE",
+    "fixture": "tests/fixtures/polycam/polycam_plan_mock_low_confidence.json",
+    "expected": {
+      "status": "invalid",
+      "blocking_errors": ["E-PARSE-002"],
+      "warnings": ["W-PARSE-001"]
+    }
+  }
+]
