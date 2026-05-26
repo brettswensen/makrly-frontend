@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:polycam": "python3 -m pytest -q tests/python/test_polycam_harness.py"
+    "test:polycam": "python3 -m pytest -q tests/python/test_polycam_harness.py",
+    "test:edit-engine": "tsx --test tests/ts/polycam-edit-engine.test.ts"
   },
   "dependencies": {
     "next": "16.2.6",
@@ -22,6 +23,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }
